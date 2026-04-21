@@ -72,7 +72,7 @@ function calculateBathArea() {
     let totalBathArea = 0;
     
     // Облицовка экрана ванной (фронтальная панель): длина * высота (добавляем к общей площади)
-    if (bathScreenCheckbox.checked) {
+    if (bathScreenCheckbox && bathScreenCheckbox.checked) {
         totalBathArea += bathLength * bathHeight;
     }
     
@@ -84,7 +84,7 @@ function calculateBathArea() {
     const bathZoneArea = (bathLength * bathHeight) + (2 * bathWidth * bathHeight) + (bathLength * bathWidth);
     
     // Если чекбокс "Плитка в зоне ванны" отмечен — добавляем, если нет — ничего не делаем (вычитание будет в main расчете)
-    if (bathZoneCheckbox.checked) {
+    if (bathZoneCheckbox && bathZoneCheckbox.checked) {
         totalBathArea += bathZoneArea;
     } else {
         // Возвращаем отрицательное значение для вычитания из общей площади
