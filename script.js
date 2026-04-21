@@ -19,8 +19,7 @@ const bathLengthInput = document.getElementById('bath-length');
 const bathWidthInput = document.getElementById('bath-width');
 const bathHeightInput = document.getElementById('bath-height');
 const bathScreenCheckbox = document.getElementById('bath-screen');
-const bathFloorCheckbox = document.getElementById('bath-floor');
-const bathSidesCheckbox = document.getElementById('bath-sides');
+const bathZoneCheckbox = document.getElementById('bath-zone');
 const bathAreaRow = document.getElementById('bath-area-row');
 const bathAreaElement = document.getElementById('bath-area');
 const finalTotalRow = document.getElementById('final-total-row');
@@ -69,19 +68,24 @@ function calculateBathArea() {
     
     let totalBathArea = 0;
     
-    // Облицовка экрана ванной (фронтальная панель): длина * высота
+    // Облицовка экрана ванной (фронтальная панель): длина * высота (добавляем к общей площади)
     if (bathScreenCheckbox.checked) {
         totalBathArea += bathLength * bathHeight;
     }
     
-    // Плитка под ванной (слепая зона пола): длина * ширина
-    if (bathFloorCheckbox.checked) {
-        totalBathArea += bathLength * bathWidth;
-    }
+    // Плитка в зоне ванны (задняя стена + боковые стороны + пол под ванной)
+    // Если чекбокс снят — вычитаем эту площадь из общей
+    // Задняя стена: длина * высота
+    // Боковые стороны: ширина * высота * 2
+    // Пол под ванной: длина * ширина
+    const bathZoneArea = (bathLength * bathHeight) + (2 * bathWidth * bathHeight) + (bathLength * bathWidth);
     
-    // Облицовка торцов ванны (две боковые стороны): ширина * высота * 2
-    if (bathSidesCheckbox.checked) {
-        totalBathArea += 2 * (bathWidth * bathHeight);
+    // Если чекбокс "Плитка в зоне ванны" отмечен — добавляем, если нет — ничего не делаем (вычитание будет в main расчете)
+    if (bathZoneCheckbox.checked) {
+        totalBathArea += bathZoneArea;
+    } else {
+        // Возвращаем отрицательное значение для вычитания из общей площади
+        totalBathArea -= bathZoneArea;
     }
     
     return totalBathArea;
@@ -137,10 +141,10 @@ function calculateArea() {
     document.getElementById('reserve-percent').textContent = reserve;
     
     // Отображение результатов по ванне
-    if (bathArea > 0) {
+    if (bathArea !== 0) {
         bathAreaRow.style.display = 'flex';
         finalTotalRow.style.display = 'flex';
-        bathAreaElement.textContent = bathArea.toFixed(2) + ' м²';
+        bathAreaElement.textContent = (bathArea >= 0 ? '+' : '') + bathArea.toFixed(2) + ' м²';
         finalTotalElement.textContent = finalTotal.toFixed(2) + ' м²';
     } else {
         bathAreaRow.style.display = 'none';
