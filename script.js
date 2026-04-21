@@ -1,6 +1,39 @@
 // Глобальные переменные
 let openingsCount = 0;
 
+// Функция добавления проема (окно/дверь) - глобальная
+function addOpening() {
+    openingsCount++;
+    
+    const openingDiv = document.createElement('div');
+    openingDiv.className = 'opening-item';
+    openingDiv.id = `opening-${openingsCount}`;
+    openingDiv.innerHTML = `
+        <div class="form-group">
+            <label>Ширина (м):</label>
+            <input type="number" class="opening-width" min="0" step="0.01" placeholder="Например: 0.9">
+        </div>
+        <div class="form-group">
+            <label>Высота (м):</label>
+            <input type="number" class="opening-height" min="0" step="0.01" placeholder="Например: 2.1">
+        </div>
+        <button type="button" class="btn btn-danger" onclick="removeOpening(${openingsCount})">✕ Удалить</button>
+    `;
+    
+    const openingsList = document.getElementById('openings-list');
+    if (openingsList) {
+        openingsList.appendChild(openingDiv);
+    }
+}
+
+// Функция удаления проема - глобальная
+function removeOpening(id) {
+    const opening = document.getElementById(`opening-${id}`);
+    if (opening) {
+        opening.remove();
+    }
+}
+
 // Инициализация после загрузки DOM
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -27,36 +60,6 @@ const bathAreaRow = document.getElementById('bath-area-row');
 const bathAreaElement = document.getElementById('bath-area');
 const finalTotalRow = document.getElementById('final-total-row');
 const finalTotalElement = document.getElementById('final-total');
-
-// Функция добавления проема (окно/дверь)
-function addOpening() {
-    openingsCount++;
-    
-    const openingDiv = document.createElement('div');
-    openingDiv.className = 'opening-item';
-    openingDiv.id = `opening-${openingsCount}`;
-    openingDiv.innerHTML = `
-        <div class="form-group">
-            <label>Ширина (м):</label>
-            <input type="number" class="opening-width" min="0" step="0.01" placeholder="Например: 0.9">
-        </div>
-        <div class="form-group">
-            <label>Высота (м):</label>
-            <input type="number" class="opening-height" min="0" step="0.01" placeholder="Например: 2.1">
-        </div>
-        <button type="button" class="btn btn-danger" onclick="removeOpening(${openingsCount})">✕ Удалить</button>
-    `;
-    
-    openingsList.appendChild(openingDiv);
-}
-
-// Функция удаления проема
-function removeOpening(id) {
-    const opening = document.getElementById(`opening-${id}`);
-    if (opening) {
-        opening.remove();
-    }
-}
 
 // Функция расчета площади ванны
 function calculateBathArea() {
@@ -200,12 +203,24 @@ function calculateTiles() {
     tilesResultSection.style.display = 'block';
 }
 
-// Обработчики событий
+// Обработчики событий - расчет в реальном времени
 addOpeningBtn.addEventListener('click', addOpening);
-calculateBtn.addEventListener('click', calculateArea);
 calculateTilesBtn.addEventListener('click', calculateTiles);
 
-// Добавление одного проема по умолчанию
+// Добавляем обработчики для всех полей ввода для расчета в реальном времени
+const allInputs = document.querySelectorAll('input');
+allInputs.forEach(input => {
+    input.addEventListener('input', function() {
+        // Показываем результаты только если есть основные размеры
+        if (lengthInput.value && widthInput.value && heightInput.value) {
+            calculateArea();
+        } else {
+            resultsSection.style.display = 'none';
+        }
+    });
+});
+
+// Добавляем один проем по умолчанию
 addOpening();
 
 }); // Конец DOMContentLoaded
