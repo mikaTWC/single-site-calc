@@ -1,6 +1,9 @@
 // Глобальные переменные
 let openingsCount = 0;
 
+// Инициализация после загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+    
 // Элементы DOM
 const lengthInput = document.getElementById('length');
 const widthInput = document.getElementById('width');
@@ -204,3 +207,5 @@ calculateTilesBtn.addEventListener('click', calculateTiles);
 
 // Добавление одного проема по умолчанию
 addOpening();
+
+}); // Конец DOMContentLoaded
