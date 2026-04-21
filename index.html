@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор площади для укладки плитки</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏠 Калькулятор площади для укладки плитки</h1>
+            <p>Рассчитайте площадь стен и пола для закупки керамической плитки</p>
+        </header>
+
+        <main>
+            <!-- Параметры комнаты -->
+            <section class="card">
+                <h2>📐 Параметры помещения</h2>
+                <div class="form-group">
+                    <label for="length">Длина комнаты (м):</label>
+                    <input type="number" id="length" min="0" step="0.01" placeholder="Например: 4.5">
+                </div>
+                <div class="form-group">
+                    <label for="width">Ширина комнаты (м):</label>
+                    <input type="number" id="width" min="0" step="0.01" placeholder="Например: 3.2">
+                </div>
+                <div class="form-group">
+                    <label for="height">Высота потолка (м):</label>
+                    <input type="number" id="height" min="0" step="0.01" placeholder="Например: 2.7">
+                </div>
+            </section>
+
+            <!-- Исключения (окна, двери) -->
+            <section class="card">
+                <h2>🚪 Исключения (окна, двери)</h2>
+                <div id="openings-list"></div>
+                <button type="button" id="add-opening" class="btn btn-secondary">+ Добавить проем</button>
+            </section>
+
+            <!-- Запас материала -->
+            <section class="card">
+                <h2>📦 Запас материала</h2>
+                <div class="form-group">
+                    <label for="reserve">Запас на подрезку (%):</label>
+                    <input type="number" id="reserve" min="0" max="50" value="10" step="1">
+                    <small>Рекомендуется 5-15% в зависимости от способа укладки</small>
+                </div>
+            </section>
+
+            <!-- Кнопка расчета -->
+            <button type="button" id="calculate" class="btn btn-primary">🔢 Рассчитать</button>
+
+            <!-- Результаты -->
+            <section class="card results" id="results" style="display: none;">
+                <h2>📊 Результаты расчета</h2>
+                
+                <div class="result-item">
+                    <span class="label">Площадь пола:</span>
+                    <span class="value" id="floor-area">0 м²</span>
+                </div>
+                
+                <div class="result-item">
+                    <span class="label">Площадь стен:</span>
+                    <span class="value" id="walls-area">0 м²</span>
+                </div>
+                
+                <div class="result-item">
+                    <span class="label">Площадь исключений:</span>
+                    <span class="value" id="openings-area">0 м²</span>
+                </div>
+                
+                <div class="result-item">
+                    <span class="label">Итоговая площадь:</span>
+                    <span class="value" id="total-area">0 м²</span>
+                </div>
+                
+                <div class="result-item highlight">
+                    <span class="label">С учетом запаса (<span id="reserve-percent">10</span>%):</span>
+                    <span class="value" id="total-with-reserve">0 м²</span>
+                </div>
+
+                <div class="tile-info" id="tile-info" style="display: none;">
+                    <h3>🔸 Информация по плитке</h3>
+                    <div class="form-group">
+                        <label for="tile-width">Ширина плитки (см):</label>
+                        <input type="number" id="tile-width" min="0" step="0.1" placeholder="Например: 30">
+                    </div>
+                    <div class="form-group">
+                        <label for="tile-height">Высота плитки (см):</label>
+                        <input type="number" id="tile-height" min="0" step="0.1" placeholder="Например: 60">
+                    </div>
+                    <button type="button" id="calculate-tiles" class="btn btn-secondary">Рассчитать количество плитки</button>
+                    
+                    <div id="tiles-result" style="display: none; margin-top: 15px;">
+                        <div class="result-item">
+                            <span class="label">Площадь одной плитки:</span>
+                            <span class="value" id="one-tile-area">0 м²</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="label">Необходимо плиток (шт):</span>
+                            <span class="value" id="tiles-count">0 шт</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>💡 Совет: Всегда покупайте плитку с запасом на подрезку и возможные повреждения</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
