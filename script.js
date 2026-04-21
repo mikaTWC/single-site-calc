@@ -1,226 +1,218 @@
-// Глобальные переменные
-let openingsCount = 0;
+// Глобальный массив для хранения проемов
+let openings = [];
 
-// Функция добавления проема (окно/дверь) - глобальная
-function addOpening() {
-    openingsCount++;
-    
-    const openingDiv = document.createElement('div');
-    openingDiv.className = 'opening-item';
-    openingDiv.id = `opening-${openingsCount}`;
-    openingDiv.innerHTML = `
-        <div class="form-group">
-            <label>Ширина (м):</label>
-            <input type="number" class="opening-width" min="0" step="0.01" placeholder="Например: 0.9">
-        </div>
-        <div class="form-group">
-            <label>Высота (м):</label>
-            <input type="number" class="opening-height" min="0" step="0.01" placeholder="Например: 2.1">
-        </div>
-        <button type="button" class="btn btn-danger" onclick="removeOpening(${openingsCount})">✕ Удалить</button>
-    `;
-    
-    const openingsList = document.getElementById('openings-list');
-    if (openingsList) {
-        openingsList.appendChild(openingDiv);
+// Функция для получения значений полей
+function getValue(id) {
+    const element = document.getElementById(id);
+    return element ? parseFloat(element.value) || 0 : 0;
+}
+
+// Функция для получения значения чекбокса
+function getCheckboxValue(id) {
+    const element = document.getElementById(id);
+    return element ? element.checked : false;
+}
+
+// Функция для установки текста элемента
+function setText(id, text) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = text;
     }
 }
 
-// Функция удаления проема - глобальная
-function removeOpening(id) {
-    const opening = document.getElementById(`opening-${id}`);
-    if (opening) {
-        opening.remove();
+// Функция для показа/скрытия элемента
+function setDisplay(id, display) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.style.display = display;
     }
 }
 
-// Инициализация после загрузки DOM
-document.addEventListener('DOMContentLoaded', function() {
-    
-// Элементы DOM
-const lengthInput = document.getElementById('length');
-const widthInput = document.getElementById('width');
-const heightInput = document.getElementById('height');
-const reserveInput = document.getElementById('reserve');
-const addOpeningBtn = document.getElementById('add-opening');
-const openingsList = document.getElementById('openings-list');
-const calculateBtn = document.getElementById('calculate');
-const resultsSection = document.getElementById('results');
-const tileInfoSection = document.getElementById('tile-info');
-const tilesResultSection = document.getElementById('tiles-result');
-const calculateTilesBtn = document.getElementById('calculate-tiles');
-
-// Элементы ванны
-const bathLengthInput = document.getElementById('bath-length');
-const bathWidthInput = document.getElementById('bath-width');
-const bathHeightInput = document.getElementById('bath-height');
-const bathScreenCheckbox = document.getElementById('bath-screen');
-const bathZoneCheckbox = document.getElementById('bath-zone');
-const bathAreaRow = document.getElementById('bath-area-row');
-const bathAreaElement = document.getElementById('bath-area');
-const finalTotalRow = document.getElementById('final-total-row');
-const finalTotalElement = document.getElementById('final-total');
-
-// Функция расчета площади ванны
-function calculateBathArea() {
-    const bathLength = parseFloat(bathLengthInput.value) || 0;
-    const bathWidth = parseFloat(bathWidthInput.value) || 0;
-    const bathHeight = parseFloat(bathHeightInput.value) || 0;
-    
-    // Если размеры ванны не указаны, возвращаем 0
-    if (bathLength <= 0 || bathWidth <= 0 || bathHeight <= 0) {
-        return 0;
-    }
-    
-    let totalBathArea = 0;
-    
-    // Облицовка экрана ванной (фронтальная панель): длина * высота (добавляем к общей площади)
-    if (bathScreenCheckbox && bathScreenCheckbox.checked) {
-        totalBathArea += bathLength * bathHeight;
-    }
-    
-    // Плитка в зоне ванны (задняя стена + боковые стороны + пол под ванной)
-    // Если чекбокс снят — вычитаем эту площадь из общей
-    // Задняя стена: длина * высота
-    // Боковые стороны: ширина * высота * 2
-    // Пол под ванной: длина * ширина
-    const bathZoneArea = (bathLength * bathHeight) + (2 * bathWidth * bathHeight) + (bathLength * bathWidth);
-    
-    // Если чекбокс "Плитка в зоне ванны" отмечен — добавляем, если нет — ничего не делаем (вычитание будет в main расчете)
-    if (bathZoneCheckbox && bathZoneCheckbox.checked) {
-        totalBathArea += bathZoneArea;
-    } else {
-        // Возвращаем отрицательное значение для вычитания из общей площади
-        totalBathArea -= bathZoneArea;
-    }
-    
-    return totalBathArea;
-}
-
-// Функция расчета площади
+// Основная функция расчета площади
 function calculateArea() {
-    // Получаем значения
-    const length = parseFloat(lengthInput.value) || 0;
-    const width = parseFloat(widthInput.value) || 0;
-    const height = parseFloat(heightInput.value) || 0;
-    const reserve = parseFloat(reserveInput.value) || 0;
-    
-    // Проверка ввода
+    const length = getValue('length');
+    const width = getValue('width');
+    const height = getValue('height');
+    const reservePercent = getValue('reserve');
+
+    // Проверка на заполненность основных полей
     if (length <= 0 || width <= 0 || height <= 0) {
-        alert('Пожалуйста, введите корректные размеры помещения (все значения должны быть больше 0)');
+        setDisplay('resultsBlock', 'none');
         return;
     }
-    
+
+    // Показываем блок результатов
+    setDisplay('resultsBlock', 'block');
+
     // Расчет площади пола
     const floorArea = length * width;
-    
+
     // Расчет площади стен (периметр * высота)
-    const wallsArea = (2 * (length + width)) * height;
-    
+    const perimeter = 2 * (length + width);
+    const wallsTotal = perimeter * height;
+
     // Расчет площади исключений (окна, двери)
     let totalOpeningsArea = 0;
-    const openingItems = document.querySelectorAll('.opening-item');
-    openingItems.forEach(item => {
-        const openingWidth = parseFloat(item.querySelector('.opening-width').value) || 0;
-        const openingHeight = parseFloat(item.querySelector('.opening-height').value) || 0;
-        totalOpeningsArea += openingWidth * openingHeight;
+    openings.forEach(opening => {
+        totalOpeningsArea += opening.width * opening.height;
     });
-    
-    // Итоговая площадь для укладки (без учета ванны)
-    const totalArea = floorArea + wallsArea - totalOpeningsArea;
-    
-    // Площадь с запасом (без учета ванны)
-    const totalWithReserve = totalArea * (1 + reserve / 100);
-    
-    // Расчет площади ванны
-    const bathArea = calculateBathArea();
-    
-    // Общая площадь с учетом ванны
-    const finalTotal = totalWithReserve + bathArea;
-    
-    // Отображение результатов
-    document.getElementById('floor-area').textContent = floorArea.toFixed(2) + ' м²';
-    document.getElementById('walls-area').textContent = wallsArea.toFixed(2) + ' м²';
-    document.getElementById('openings-area').textContent = totalOpeningsArea.toFixed(2) + ' м²';
-    document.getElementById('total-area').textContent = totalArea.toFixed(2) + ' м²';
-    document.getElementById('total-with-reserve').textContent = totalWithReserve.toFixed(2) + ' м²';
-    document.getElementById('reserve-percent').textContent = reserve;
-    
-    // Отображение результатов по ванне
-    if (bathArea !== 0) {
-        bathAreaRow.style.display = 'flex';
-        finalTotalRow.style.display = 'flex';
-        bathAreaElement.textContent = (bathArea >= 0 ? '+' : '') + bathArea.toFixed(2) + ' м²';
-        finalTotalElement.textContent = finalTotal.toFixed(2) + ' м²';
-    } else {
-        bathAreaRow.style.display = 'none';
-        finalTotalRow.style.display = 'none';
+
+    // Расчет коррекции по ванне
+    const bathLength = getValue('bathLength');
+    const bathWidth = getValue('bathWidth');
+    const bathHeight = getValue('bathHeight');
+    const tileUnderBath = getCheckboxValue('tileUnderBath');
+    const screenCladding = getCheckboxValue('screenCladding');
+
+    let bathAdjustment = 0;
+    let bathNote = "";
+
+    if (bathLength > 0 && bathWidth > 0 && bathHeight > 0) {
+        // Площадь зоны ванны, которую НЕ нужно облицовывать, если чекбокс снят
+        // Задняя стена (длина * высота) + 2 боковые стороны (ширина * высота) + пол (длина * ширина)
+        const backWall = bathLength * bathHeight;
+        const sideWalls = 2 * (bathWidth * bathHeight);
+        const floorUnderBath = bathLength * bathWidth;
+        const areaNotToTile = backWall + sideWalls + floorUnderBath;
+
+        // Площадь экрана ванны (длина * высота)
+        const screenArea = bathLength * bathHeight;
+
+        if (!tileUnderBath) {
+            // Если плитка под ванной НЕ нужна, вычитаем эту зону
+            bathAdjustment -= areaNotToTile;
+            bathNote = `(-${areaNotToTile.toFixed(2)} м²)`;
+        } else {
+            bathNote = "(полная зона)";
+        }
+
+        if (screenCladding) {
+            // Если нужна облицовка экрана, прибавляем площадь экрана
+            bathAdjustment += screenArea;
+            bathNote += ` (+${screenArea.toFixed(2)} м² экран)`;
+        } else if (bathNote === "") {
+            bathNote = "(без экрана)";
+        }
     }
+
+    // Итоговая площадь
+    const totalArea = floorArea + (wallsTotal - totalOpeningsArea) + bathAdjustment;
     
-    // Показываем секцию результатов
-    resultsSection.style.display = 'block';
-    tileInfoSection.style.display = 'block';
-    tilesResultSection.style.display = 'none';
+    // Площадь с запасом
+    const finalWithReserve = totalArea * (1 + reservePercent / 100);
+
+    // Обновление результатов
+    setText('floorAreaResult', `${floorArea.toFixed(2)} м²`);
+    setText('wallsTotalResult', `${wallsTotal.toFixed(2)} м²`);
+    setText('openingsResult', `-${totalOpeningsArea.toFixed(2)} м²`);
     
-    // Прокрутка к результатам
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Формирование текста для зоны ванны
+    let bathText = `${bathAdjustment >= 0 ? '+' : ''}${bathAdjustment.toFixed(2)} м²`;
+    if (bathNote) {
+        bathText += `<br><span class="adjustment">${bathNote}</span>`;
+    }
+    document.getElementById('bathAdjustmentResult').innerHTML = bathText;
+    
+    setText('totalAreaResult', `${totalArea.toFixed(2)} м²`);
+    setText('reservePercentDisplay', reservePercent);
+    setText('finalWithReserveResult', `${finalWithReserve.toFixed(2)} м²`);
 }
 
-// Функция расчета количества плитки
-function calculateTiles() {
-    const tileWidth = parseFloat(document.getElementById('tile-width').value) || 0;
-    const tileHeight = parseFloat(document.getElementById('tile-height').value) || 0;
-    // Используем финальную сумму с учетом ванны, если она есть
-    let totalAreaValue;
-    if (finalTotalRow.style.display !== 'none') {
-        const finalTotalText = document.getElementById('final-total').textContent;
-        totalAreaValue = parseFloat(finalTotalText) || 0;
-    } else {
-        const totalWithReserveText = document.getElementById('total-with-reserve').textContent;
-        totalAreaValue = parseFloat(totalWithReserveText) || 0;
+// Добавление проема
+function addOpening() {
+    const width = getValue('openingWidth');
+    const height = getValue('openingHeight');
+
+    if (width <= 0 || height <= 0) {
+        alert('Пожалуйста, введите корректные размеры проема');
+        return;
     }
+
+    openings.push({ width, height });
     
-    if (tileWidth <= 0 || tileHeight <= 0) {
+    // Очистка полей ввода
+    document.getElementById('openingWidth').value = '';
+    document.getElementById('openingHeight').value = '';
+    
+    renderOpenings();
+    calculateArea();
+}
+
+// Удаление проема
+function removeOpening(index) {
+    openings.splice(index, 1);
+    renderOpenings();
+    calculateArea();
+}
+
+// Отрисовка списка проемов
+function renderOpenings() {
+    const container = document.getElementById('openingsList');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    openings.forEach((opening, index) => {
+        const area = opening.width * opening.height;
+        const div = document.createElement('div');
+        div.className = 'opening-item';
+        div.innerHTML = `
+            <span>Проем ${index + 1}: ${opening.width}м × ${opening.height}м (${area.toFixed(2)} м²)</span>
+            <button class="btn-remove" onclick="removeOpening(${index})">✕</button>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// Расчет количества плиток
+function calculateTiles() {
+    const totalAreaStr = document.getElementById('totalAreaResult').textContent;
+    if (!totalAreaStr || totalAreaStr === '0 м²') {
+        alert('Сначала рассчитайте площадь помещения');
+        return;
+    }
+
+    const totalArea = parseFloat(totalAreaStr);
+    const tileLengthCm = getValue('tileLength');
+    const tileWidthCm = getValue('tileWidth');
+
+    if (tileLengthCm <= 0 || tileWidthCm <= 0) {
         alert('Пожалуйста, введите корректные размеры плитки');
         return;
     }
+
+    // Перевод размеров плитки в метры
+    const tileLengthM = tileLengthCm / 100;
+    const tileWidthM = tileWidthCm / 100;
     
-    if (totalAreaValue <= 0) {
-        alert('Сначала выполните расчет площади помещения');
-        return;
-    }
-    
-    // Площадь одной плитки в м² (размеры в см переводим в м)
-    const oneTileArea = (tileWidth / 100) * (tileHeight / 100);
+    // Площадь одной плитки
+    const tileArea = tileLengthM * tileWidthM;
     
     // Количество плиток
-    const tilesCount = Math.ceil(totalAreaValue / oneTileArea);
-    
-    // Отображение результатов
-    document.getElementById('one-tile-area').textContent = oneTileArea.toFixed(4) + ' м²';
-    document.getElementById('tiles-count').textContent = tilesCount + ' шт';
-    
-    tilesResultSection.style.display = 'block';
+    const tilesNeeded = Math.ceil(totalArea / tileArea);
+
+    const resultDiv = document.getElementById('tileResult');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `
+        Площадь плитки: ${tileArea.toFixed(4)} м²<br>
+        Необходимо плиток: <strong style="color: var(--accent-color); font-size: 1.4em;">${tilesNeeded} шт.</strong>
+    `;
 }
 
-// Обработчики событий - расчет в реальном времени
-addOpeningBtn.addEventListener('click', addOpening);
-calculateTilesBtn.addEventListener('click', calculateTiles);
-
-// Добавляем обработчики для всех полей ввода для расчета в реальном времени
-const allInputs = document.querySelectorAll('input');
-allInputs.forEach(input => {
-    input.addEventListener('input', function() {
-        // Показываем результаты только если есть основные размеры
-        if (lengthInput.value && widthInput.value && heightInput.value) {
-            calculateArea();
-        } else {
-            resultsSection.style.display = 'none';
-        }
+// Навешиваем обработчики событий после загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+    // Получаем все input элементы
+    const inputs = document.querySelectorAll('input[type="number"]');
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    
+    // Добавляем обработчик события input для всех числовых полей
+    inputs.forEach(input => {
+        input.addEventListener('input', calculateArea);
+    });
+    
+    // Добавляем обработчик события change для всех чекбоксов
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', calculateArea);
     });
 });
-
-// Добавляем один проем по умолчанию
-addOpening();
-
-}); // Конец DOMContentLoaded
