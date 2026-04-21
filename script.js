@@ -14,6 +14,18 @@ const tileInfoSection = document.getElementById('tile-info');
 const tilesResultSection = document.getElementById('tiles-result');
 const calculateTilesBtn = document.getElementById('calculate-tiles');
 
+// Элементы ванны
+const bathLengthInput = document.getElementById('bath-length');
+const bathWidthInput = document.getElementById('bath-width');
+const bathHeightInput = document.getElementById('bath-height');
+const bathScreenCheckbox = document.getElementById('bath-screen');
+const bathFloorCheckbox = document.getElementById('bath-floor');
+const bathSidesCheckbox = document.getElementById('bath-sides');
+const bathAreaRow = document.getElementById('bath-area-row');
+const bathAreaElement = document.getElementById('bath-area');
+const finalTotalRow = document.getElementById('final-total-row');
+const finalTotalElement = document.getElementById('final-total');
+
 // Функция добавления проема (окно/дверь)
 function addOpening() {
     openingsCount++;
@@ -42,6 +54,37 @@ function removeOpening(id) {
     if (opening) {
         opening.remove();
     }
+}
+
+// Функция расчета площади ванны
+function calculateBathArea() {
+    const bathLength = parseFloat(bathLengthInput.value) || 0;
+    const bathWidth = parseFloat(bathWidthInput.value) || 0;
+    const bathHeight = parseFloat(bathHeightInput.value) || 0;
+    
+    // Если размеры ванны не указаны, возвращаем 0
+    if (bathLength <= 0 || bathWidth <= 0 || bathHeight <= 0) {
+        return 0;
+    }
+    
+    let totalBathArea = 0;
+    
+    // Облицовка экрана ванной (фронтальная панель): длина * высота
+    if (bathScreenCheckbox.checked) {
+        totalBathArea += bathLength * bathHeight;
+    }
+    
+    // Плитка под ванной (слепая зона пола): длина * ширина
+    if (bathFloorCheckbox.checked) {
+        totalBathArea += bathLength * bathWidth;
+    }
+    
+    // Облицовка торцов ванны (две боковые стороны): ширина * высота * 2
+    if (bathSidesCheckbox.checked) {
+        totalBathArea += 2 * (bathWidth * bathHeight);
+    }
+    
+    return totalBathArea;
 }
 
 // Функция расчета площади
@@ -73,11 +116,17 @@ function calculateArea() {
         totalOpeningsArea += openingWidth * openingHeight;
     });
     
-    // Итоговая площадь для укладки
+    // Итоговая площадь для укладки (без учета ванны)
     const totalArea = floorArea + wallsArea - totalOpeningsArea;
     
-    // Площадь с запасом
+    // Площадь с запасом (без учета ванны)
     const totalWithReserve = totalArea * (1 + reserve / 100);
+    
+    // Расчет площади ванны
+    const bathArea = calculateBathArea();
+    
+    // Общая площадь с учетом ванны
+    const finalTotal = totalWithReserve + bathArea;
     
     // Отображение результатов
     document.getElementById('floor-area').textContent = floorArea.toFixed(2) + ' м²';
@@ -86,6 +135,17 @@ function calculateArea() {
     document.getElementById('total-area').textContent = totalArea.toFixed(2) + ' м²';
     document.getElementById('total-with-reserve').textContent = totalWithReserve.toFixed(2) + ' м²';
     document.getElementById('reserve-percent').textContent = reserve;
+    
+    // Отображение результатов по ванне
+    if (bathArea > 0) {
+        bathAreaRow.style.display = 'flex';
+        finalTotalRow.style.display = 'flex';
+        bathAreaElement.textContent = bathArea.toFixed(2) + ' м²';
+        finalTotalElement.textContent = finalTotal.toFixed(2) + ' м²';
+    } else {
+        bathAreaRow.style.display = 'none';
+        finalTotalRow.style.display = 'none';
+    }
     
     // Показываем секцию результатов
     resultsSection.style.display = 'block';
@@ -100,15 +160,22 @@ function calculateArea() {
 function calculateTiles() {
     const tileWidth = parseFloat(document.getElementById('tile-width').value) || 0;
     const tileHeight = parseFloat(document.getElementById('tile-height').value) || 0;
-    const totalWithReserveText = document.getElementById('total-with-reserve').textContent;
-    const totalWithReserve = parseFloat(totalWithReserveText) || 0;
+    // Используем финальную сумму с учетом ванны, если она есть
+    let totalAreaValue;
+    if (finalTotalRow.style.display !== 'none') {
+        const finalTotalText = document.getElementById('final-total').textContent;
+        totalAreaValue = parseFloat(finalTotalText) || 0;
+    } else {
+        const totalWithReserveText = document.getElementById('total-with-reserve').textContent;
+        totalAreaValue = parseFloat(totalWithReserveText) || 0;
+    }
     
     if (tileWidth <= 0 || tileHeight <= 0) {
         alert('Пожалуйста, введите корректные размеры плитки');
         return;
     }
     
-    if (totalWithReserve <= 0) {
+    if (totalAreaValue <= 0) {
         alert('Сначала выполните расчет площади помещения');
         return;
     }
@@ -117,7 +184,7 @@ function calculateTiles() {
     const oneTileArea = (tileWidth / 100) * (tileHeight / 100);
     
     // Количество плиток
-    const tilesCount = Math.ceil(totalWithReserve / oneTileArea);
+    const tilesCount = Math.ceil(totalAreaValue / oneTileArea);
     
     // Отображение результатов
     document.getElementById('one-tile-area').textContent = oneTileArea.toFixed(4) + ' м²';
